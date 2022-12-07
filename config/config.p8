@@ -41,6 +41,8 @@ config {
             }
             i = readchar
         }
+
+        return
     }
 
     sub getdirective(uword directive) {
