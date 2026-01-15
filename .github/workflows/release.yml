@@ -1,0 +1,69 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Download Prog8 compiler
+        run: |
+          # Update this version when a new prog8 release is available
+          PROG8_VERSION="12.0.1"
+          curl -L -o prog8c-all.jar "https://github.com/irmen/prog8/releases/download/v${PROG8_VERSION}/prog8c-all.jar"
+          echo "PROG8_JAR=$(pwd)/prog8c-all.jar" >> $GITHUB_ENV
+
+      - name: Install 64tass
+        run: |
+          sudo add-apt-repository universe -y
+          sudo apt-get update
+          sudo apt-get install -y 64tass
+
+      - name: Build project
+        run: |
+          mkdir -p build
+          java -jar $PROG8_JAR -target c128 -out build main.p8
+          ls -la build/
+
+      - name: Get version from tag
+        id: tag_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Prepare release artifacts
+        run: |
+          cd build
+          find . -type f \( -name "*.prg" -o -name "*.bin" -o -name "*.asm" \) -exec echo {} \;
+          cd ..
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/*.prg
+            build/*.bin
+            build/*.asm
+          name: Release v${{ steps.tag_version.outputs.version }}
+          body: |
+            Release v${{ steps.tag_version.outputs.version }}
+            
+            Built artifacts:
+            - Compiled program files (.prg/.bin)
+            - Assembly source (.asm)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,6 @@
-# ColorX16
+# ColorX128
 
-This project aims to be BBS software for the Commander X16. The basic pattern will be modeled after "Color 64" by Greg Pfountz. The main language will be Prog8.
+This project aims to be BBS software for the Commodore 128. The basic pattern will be modeled after "Color 64" by Greg Pfountz. The main language will be Prog8.
 
 ## Status
 
