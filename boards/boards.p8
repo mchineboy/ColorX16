@@ -467,7 +467,7 @@ boards {
                     continue
                 }
                 
-                ubyte choice = @input
+                ubyte choice = @(input)
                 if choice >= $30 and choice <= $39 {
                     choice = choice - $30
                 } else {
@@ -519,7 +519,7 @@ boards {
                     continue
                 }
                 
-                ubyte choice = @input
+                ubyte choice = @(input)
                 if choice >= $30 and choice <= $39 {
                     choice = choice - $30
                 } else {
