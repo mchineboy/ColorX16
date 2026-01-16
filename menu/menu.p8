@@ -5,6 +5,7 @@
 %import strings
 %import conv
 %import boards/boards
+%import messaging/messaging
 
 ; Main menu and navigation system for BBS
 ; Provides menu-driven interface for accessing BBS features
@@ -100,15 +101,9 @@ menu {
         boards.show_menu()
     }
     
-    ; Show messaging menu (placeholder)
+    ; Show messaging menu
     sub show_messaging_menu() {
-        session.send_line("")
-        session.send_line("=== Private Messages ===")
-        session.send_line("")
-        session.send_line("Private messaging is not yet implemented.")
-        session.send_line("")
-        session.send_string("Press Enter to continue...")
-        session.read_line()
+        messaging.show_menu()
     }
     
     ; Show file areas menu (placeholder)

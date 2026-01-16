@@ -1,11 +1,12 @@
 %zeropage kernalsafe
-%include textio
-%include config/config
-%include setup/setup
-%include com/com
-%include session/session
-%include login/login
-%include boards/boards
+%import textio
+%import config/config
+%import setup/setup
+%import com/com
+%import session/session
+%import login/login
+%import boards/boards
+%import messaging/messaging
 
 main {
     sub start() {
@@ -65,6 +66,9 @@ main {
         
         ; Initialize message boards
         boards.init()
+        
+        ; Initialize messaging system
+        messaging.init()
         
         ; Main BBS event loop
         txt.print("BBS is now online and waiting for connections.")
