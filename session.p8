@@ -161,9 +161,9 @@ session {
     }
     
     ; Send a string (no line ending)
-    sub send_string(uword str) {
-        com.write_str(str)
-        bytes_sent = bytes_sent + strings.length(str)
+    sub send_string(uword str_ptr) {
+        com.write_str(str_ptr)
+        bytes_sent = bytes_sent + strings.length(str_ptr)
     }
     
     ; Check if session is still active
