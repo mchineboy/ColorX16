@@ -70,10 +70,7 @@ jobs:
       - name: Build project
         run: |
           mkdir -p build
-          # Add all subdirectories to srcdirs so prog8 can find modules
-          java -jar $PROG8_JAR -target c128 -out build \
-            -srcdirs config:setup:com:session:login:boards:messaging:files:menu:userdb:editor:external:games:sysop:lib \
-            main.p8
+          java -jar $PROG8_JAR -target c128 -out build main.p8
           ls -la build/
 
       - name: Get version from tag
