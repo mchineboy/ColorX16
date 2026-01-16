@@ -11,7 +11,7 @@
 
 main {
     sub start() {
-        txt.print($0e)  ; Clear screen
+        txt.cls()  ; Clear screen
         
         ; Try to load config
         if not config.load() {
@@ -25,7 +25,7 @@ main {
             txt.print("Entering setup mode...")
             txt.nl()
             txt.nl()
-            wait(60)  ; Wait 1 second
+            sys.wait(60)  ; Wait 1 second
             
             ; Run setup
             setup.run()
@@ -88,13 +88,13 @@ main {
                 ; Session ended, wait a moment before accepting next connection
                 txt.print("Session ended. Waiting for next connection...")
                 txt.nl()
-                wait(60)  ; 1 second delay
+                sys.wait(60)  ; 1 second delay
             } else {
                 ; Timeout or error - check if we should continue
                 txt.print("No connection received. Continue waiting? (Y/N)")
                 txt.nl()
                 ; For now, just continue waiting
-                wait(60)
+                sys.wait(60)
             }
             
             ; Check for STOP key (this would need to be implemented)

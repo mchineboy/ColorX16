@@ -1,5 +1,5 @@
 %import textio
-%import cbm
+%import syslib
 
 ; Communication module for BBS serial I/O
 ; Uses Device 2 for serial communication (as per C64/C128 convention)
@@ -11,13 +11,13 @@ com {
     const ubyte SERIAL_CHANNEL = 1
     const ubyte SERIAL_SECONDARY = 0  ; Secondary address for serial device
     
-    ubyte @shared device_initialized = false
+    ubyte @shared device_initialized = 0
     ubyte @shared current_channel = 0
 
     ; Initialize serial communication device
     ; Opens Device 2 for communication
     sub init() -> bool {
-        if device_initialized {
+        if device_initialized != 0 {
             return true  ; Already initialized
         }
         
@@ -43,7 +43,7 @@ com {
         ; Set input channel
         cbm.CHKIN(SERIAL_CHANNEL)
         
-        device_initialized = true
+        device_initialized = 1
         current_channel = SERIAL_CHANNEL
         
         return true
@@ -51,10 +51,10 @@ com {
     
     ; Close serial communication device
     sub close() {
-        if device_initialized {
+        if device_initialized != 0 {
             cbm.CLRCHN()  ; Clear channels
             cbm.CLOSE(SERIAL_CHANNEL)  ; Close logical file
-            device_initialized = false
+            device_initialized = 0
             current_channel = 0
         }
     }
@@ -62,7 +62,7 @@ com {
     ; Read a character from serial device
     ; Returns: character byte, or 0 if no data available or error
     sub read_char() -> ubyte {
-        if not device_initialized {
+        if device_initialized == 0 {
             return 0
         }
         
@@ -91,7 +91,7 @@ com {
     
     ; Write a character to serial device
     sub write_char(ubyte ch) -> bool {
-        if not device_initialized {
+        if device_initialized == 0 {
             return false
         }
         
@@ -115,7 +115,7 @@ com {
     
     ; Write a string to serial device
     sub write_str(uword str_ptr) -> bool {
-        if not device_initialized {
+        if device_initialized == 0 {
             return false
         }
         
@@ -150,7 +150,7 @@ com {
     ; Check if data is available to read
     ; Returns: true if data available, false otherwise
     sub data_available() -> bool {
-        if not device_initialized {
+        if device_initialized == 0 {
             return false
         }
         
@@ -174,7 +174,7 @@ com {
     ; Get device status
     ; Returns: status byte from READST
     sub get_status() -> ubyte {
-        if not device_initialized {
+        if device_initialized == 0 {
             return 255  ; Error code for not initialized
         }
         
@@ -183,7 +183,7 @@ com {
     
     ; Flush input buffer (read and discard available characters)
     sub flush_input() {
-        if not device_initialized {
+        if device_initialized == 0 {
             return
         }
         

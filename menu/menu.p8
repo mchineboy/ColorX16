@@ -168,7 +168,7 @@ menu {
         session.send_line("")
         
         uword bbs_name = config.getdirective("bbsname")
-        if len(bbs_name) == 0 {
+        if strings.length(bbs_name) == 0 {
             bbs_name = "ColorX128 BBS"
         }
         session.send_string("BBS Name: ")
@@ -176,7 +176,7 @@ menu {
         session.send_line("")
         
         uword sysop_name = config.getdirective("sysopname")
-        if len(sysop_name) == 0 {
+        if strings.length(sysop_name) == 0 {
             sysop_name = "SysOp"
         }
         session.send_string("SysOp: ")

@@ -11,7 +11,7 @@
 
 session {
 
-    ubyte @shared session_active = false
+    ubyte @shared session_active = 0
     uword @shared session_start_time = 0
     uword @shared bytes_received = 0
     uword @shared bytes_sent = 0
@@ -31,7 +31,7 @@ session {
     
     ; Initialize session system
     sub init() {
-        session_active = false
+        session_active = 0
         current_state = STATE_WAITING
         input_pos = 0
         bytes_received = 0
@@ -49,7 +49,7 @@ session {
         while timeout < 18000 {  ; 5 minutes (60 jiffies per second * 60 * 5)
             if com.data_available() {
                 ; Data available - connection detected
-                session_active = true
+                session_active = 1
                 current_state = STATE_CONNECTED
                 session_start_time = 0  ; TODO: Use actual system time when available
                 txt.print("Connection detected!")
@@ -58,7 +58,7 @@ session {
             }
             
             ; Small delay to avoid busy-waiting
-            wait(6)  ; 0.1 second
+            sys.wait(6)  ; 0.1 second
             timeout = timeout + 6
         }
         
@@ -71,7 +71,7 @@ session {
     ; Send greeting to connected user
     sub send_greeting() {
         uword bbs_name = config.getdirective("bbsname")
-        if len(bbs_name) == 0 {
+        if strings.length(bbs_name) == 0 {
             bbs_name = "ColorX128 BBS"
         }
         
@@ -97,7 +97,7 @@ session {
         while input_pos < 255 {
             if not com.data_available() {
                 ; No data yet, small delay
-                wait(1)
+                sys.wait(1)
                 continue
             }
             
@@ -105,7 +105,7 @@ session {
             
             if ch == 0 {
                 ; Error or no data
-                wait(1)
+                sys.wait(1)
                 continue
             }
             
@@ -149,7 +149,7 @@ session {
     
     ; Get the current input line
     sub get_input_line() -> uword {
-        return &input_buffer[0]
+        return &input_buffer
     }
     
     ; Send a line to the user
@@ -168,7 +168,7 @@ session {
     
     ; Check if session is still active
     sub is_active() -> bool {
-        if not session_active {
+        if session_active == 0 {
             return false
         }
         
@@ -195,7 +195,7 @@ session {
         if not login.prompt_login() {
             ; Login failed or user disconnected
             send_line("Login failed. Disconnecting...")
-            session_active = false
+            session_active = 0
             current_state = STATE_DISCONNECTED
             return
         }
@@ -218,7 +218,7 @@ session {
         ; Session ended
         send_line("")
         send_line("Connection closed.")
-        session_active = false
+        session_active = 0
         current_state = STATE_DISCONNECTED
     }
     
@@ -232,7 +232,7 @@ session {
     }
     
     sub get_session_time() -> uword {
-        if not session_active {
+        if session_active == 0 {
             return 0
         }
         ; TODO: Calculate actual session time when system time available

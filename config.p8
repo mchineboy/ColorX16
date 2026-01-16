@@ -1,5 +1,4 @@
 %import textio
-%import floats
 %import diskio
 %import strings
 
@@ -8,8 +7,8 @@ config {
     ubyte configdrive = 8
     uword configfilename = "bbsconfig"
     ubyte configbank = 0      ; C128 uses banks 0-1, default to 0
-    str[] configdirectives = []
-    str[] configvalues = []
+    str[64] configdirectives
+    str[64] configvalues
     uword configword = ""
     ubyte configpos = 0
     ubyte readchar = 0
@@ -70,7 +69,11 @@ config {
                 configpos = configpos + 1
             }
             else if readchar != $0a {  ; Skip line feed, but process other chars
-                configword = configword + chr(readchar)
+                ; Convert byte to character string
+                ubyte[2] char_buf
+                char_buf[0] = readchar
+                char_buf[1] = 0
+                configword = configword + &char_buf
             }
             
             i = readchar
@@ -109,7 +112,8 @@ config {
         }
         
         ; Write each directive=value pair
-        for i in 0 to configpos {
+        ubyte i = 0
+        while i < configpos {
             ; Write directive
             uword dir_len = strings.length(configdirectives[i])
             if dir_len > 0 {
@@ -141,6 +145,7 @@ config {
                 diskio.f_close_w()
                 return false
             }
+            i++
         }
         
         ; Write terminator %
@@ -161,11 +166,13 @@ config {
     ; Set a config directive value (adds or updates)
     sub setdirective(uword directive, uword value) {
         ; Check if directive already exists
-        for i in 0 to len(configdirectives) {
+        ubyte i = 0
+        while i < 64 {
             if configdirectives[i] == directive {
                 configvalues[i] = value
                 return
             }
+            i++
         }
         ; Add new directive
         configdirectives[configpos] = directive
@@ -173,18 +180,15 @@ config {
         configpos = configpos + 1
     }
 
-    sub getdirective(uword directive) {
-        if directive in configdirectives {
-            for i in 0 to len(configdirectives) {
-                if configdirectives[i] == directive {
-                    return configvalues[i]
-                }
+    sub getdirective(uword directive) -> uword {
+        ubyte i = 0
+        while i < 64 {
+            if configdirectives[i] == directive {
+                return configvalues[i]
             }
-            return configvalues[directive]
+            i++
         }
-        else {
-            return ""
-        }
+        return ""
     }
 
 }

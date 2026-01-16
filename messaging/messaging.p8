@@ -1,6 +1,6 @@
 %import textio
 %import diskio
-%import cbm
+%import syslib
 %import strings
 %import conv
 %import session/session
@@ -15,7 +15,7 @@ messaging {
     const ubyte REL_CHANNEL = 4
     const ubyte REL_DEVICE = 8
     const ubyte REL_SECONDARY = 0
-    const uword REL_FILENAME = "bbsmail"
+    uword REL_FILENAME = "bbsmail"
     
     ; Message record structure (fixed length for REL file)
     const ubyte MSG_RECORD_SIZE = 128  ; Fixed record size
@@ -31,7 +31,7 @@ messaging {
     ; Offset 80-127: Message body (48 bytes, null-terminated)
     ; Note: We'll use the last byte as flags (read/unread, deleted)
     
-    ubyte @shared messaging_initialized = false
+    ubyte @shared messaging_initialized = 0
     uword @shared max_messages = 1000  ; Maximum number of messages
     
     ; Initialize messaging system
@@ -178,7 +178,7 @@ messaging {
         ubyte i = 0
         
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 ; Check if record is empty (first byte == 0)
                 if msg_buffer[0] == 0 {
                     return i
@@ -197,7 +197,7 @@ messaging {
         ubyte i = 0
         
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {  ; Active message
                     ; Check if message is to this user
                     bool match = true
@@ -237,7 +237,7 @@ messaging {
         ubyte i = 0
         
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {
                     ; Check if message is to this user
                     bool match = true
@@ -300,7 +300,7 @@ messaging {
         ubyte i = 0
         
         while i < max_messages and displayed < 20 {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {
                     ; Check if message is to this user
                     bool match = true
@@ -321,8 +321,8 @@ messaging {
                     
                     if match and (msg_buffer[127] & $02) == 0 {  ; Not deleted
                         ; Display message header
-                        uword from = &msg_buffer[0] + 20
-                        uword subject = &msg_buffer[0] + 40
+                        uword from = &msg_buffer + 20
+                        uword subject = &msg_buffer + 40
                         
                         ; Show unread indicator
                         if (msg_buffer[127] & $01) == 0 {
@@ -354,7 +354,7 @@ messaging {
     sub read_message_by_num(ubyte msg_num, uword username) -> bool {
         ubyte[MSG_RECORD_SIZE] msg_buffer
         
-        if not read_message(msg_num, &msg_buffer[0]) {
+        if not read_message(msg_num, &msg_buffer) {
             return false
         }
         
@@ -388,9 +388,9 @@ messaging {
         session.send_line("=== Message ===")
         session.send_line("")
         
-        uword from = &msg_buffer[0] + 20
-        uword subject = &msg_buffer[0] + 40
-        uword body = &msg_buffer[0] + 80
+        uword from = &msg_buffer + 20
+        uword subject = &msg_buffer + 40
+        uword body = &msg_buffer + 80
         
         session.send_string("From: ")
         session.send_string(from)
@@ -405,7 +405,7 @@ messaging {
         
         ; Mark as read
         msg_buffer[127] = msg_buffer[127] | $01  ; Set read bit
-        write_message(msg_num, &msg_buffer[0])
+        write_message(msg_num, &msg_buffer)
         
         return true
     }
@@ -478,7 +478,7 @@ messaging {
         msg_buffer[127] = $00
         
         ; Write record
-        if write_message(record_num, &msg_buffer[0]) {
+        if write_message(record_num, &msg_buffer) {
             session.send_line("Message sent successfully!")
             return true
         }
@@ -490,7 +490,7 @@ messaging {
     sub delete_message(ubyte msg_num, uword username) -> bool {
         ubyte[MSG_RECORD_SIZE] msg_buffer
         
-        if not read_message(msg_num, &msg_buffer[0]) {
+        if not read_message(msg_num, &msg_buffer) {
             return false
         }
         
@@ -517,7 +517,7 @@ messaging {
         
         ; Mark as deleted
         msg_buffer[127] = msg_buffer[127] | $02  ; Set deleted bit
-        return write_message(msg_num, &msg_buffer[0])
+        return write_message(msg_num, &msg_buffer)
     }
     
     ; Main messaging menu
@@ -560,10 +560,10 @@ messaging {
                     list_inbox(username)
                     session.send_string("Enter message number to read (or 0 to go back): ")
                     if session.read_line() {
-                        uword num_input = session.get_input_line()
-                        ubyte msg_num = conv.str2ubyte(num_input)
-                        if msg_num != 0 {
-                            if not read_message_by_num(msg_num, username) {
+                        uword num_input2 = session.get_input_line()
+                        ubyte msg_num2 = conv.str2ubyte(num_input2)
+                        if msg_num2 != 0 {
+                            if not read_message_by_num(msg_num2, username) {
                                 session.send_line("Message not found or access denied.")
                             }
                         }

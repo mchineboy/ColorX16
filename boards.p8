@@ -1,6 +1,6 @@
 %import textio
 %import diskio
-%import cbm
+%import syslib
 %import strings
 %import conv
 %import session
@@ -15,7 +15,7 @@ boards {
     const ubyte REL_CHANNEL = 3
     const ubyte REL_DEVICE = 8
     const ubyte REL_SECONDARY = 0
-    const uword REL_FILENAME = "bbsmsgs"
+    uword REL_FILENAME = "bbsmsgs"
     
     ; Message record structure (fixed length for REL file)
     const ubyte MSG_RECORD_SIZE = 128  ; Fixed record size
@@ -75,7 +75,7 @@ boards {
             txt.nl()
         }
         
-        boards_initialized = true
+        boards_initialized = 1
         return true
     }
     
@@ -182,7 +182,7 @@ boards {
         ubyte i = 0
         
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 ; Check if record is empty (first byte == 0)
                 if msg_buffer[0] == 0 {
                     return i
@@ -201,10 +201,10 @@ boards {
         ubyte i = 0
         
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {  ; Active message
                     ; Extract message ID (offset 130-131)
-                    uword msg_id = @(&msg_buffer[0] + 130) | (@(&msg_buffer[0] + 131) << 8)
+                    uword msg_id = @(&msg_buffer + 130) | (@(&msg_buffer + 131) << 8)
                     if msg_id > max_id {
                         max_id = msg_id
                     }
@@ -231,11 +231,11 @@ boards {
         
         ; Count messages in this board
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {  ; Active message
                     ; Check board name
                     bool match = true
-                    uword j = 0
+                    ubyte j = 0
                     while j < MSG_BOARD_MAX {
                         ubyte rec_char = msg_buffer[j]
                         ubyte brd_char = @(board_name + j)
@@ -274,30 +274,30 @@ boards {
         i = 0
         ubyte displayed = 0
         while i < max_messages and displayed < 20 {  ; Limit to 20 messages
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {
                     ; Check board name
-                    bool match = true
-                    uword j = 0
-                    while j < MSG_BOARD_MAX {
-                        ubyte rec_char = msg_buffer[j]
-                        ubyte brd_char = @(board_name + j)
+                    bool match2 = true
+                    ubyte j2 = 0
+                    while j2 < MSG_BOARD_MAX {
+                        ubyte rec_char2 = msg_buffer[j2]
+                        ubyte brd_char2 = @(board_name + j2)
                         
-                        if rec_char == 0 and brd_char == 0 {
+                        if rec_char2 == 0 and brd_char2 == 0 {
                             break
                         }
-                        if rec_char != brd_char {
-                            match = false
+                        if rec_char2 != brd_char2 {
+                            match2 = false
                             break
                         }
-                        j++
+                        j2++
                     }
                     
-                    if match {
+                    if match2 {
                         ; Extract message info
-                        uword msg_id = @(&msg_buffer[0] + 130) | (@(&msg_buffer[0] + 131) << 8)
-                        uword subject = &msg_buffer[0] + 30
-                        uword author = &msg_buffer[0] + 10
+                        uword msg_id = @(&msg_buffer + 130) | (@(&msg_buffer + 131) << 8)
+                        uword subject = &msg_buffer + 30
+                        uword author = &msg_buffer + 10
                         
                         ; Display message header
                         session.send_string("[")
@@ -325,18 +325,18 @@ boards {
         ubyte i = 0
         
         while i < max_messages {
-            if read_message(i, &msg_buffer[0]) {
+            if read_message(i, &msg_buffer) {
                 if msg_buffer[0] != 0 {
-                    uword id = @(&msg_buffer[0] + 130) | (@(&msg_buffer[0] + 131) << 8)
+                    uword id = @(&msg_buffer + 130) | (@(&msg_buffer + 131) << 8)
                     if id == msg_id {
                         ; Display message
                         session.send_line("")
                         session.send_line("=== Message ===")
                         session.send_line("")
                         
-                        uword subject = &msg_buffer[0] + 30
-                        uword author = &msg_buffer[0] + 10
-                        uword body = &msg_buffer[0] + 70
+                        uword subject = &msg_buffer + 30
+                        uword author = &msg_buffer + 10
+                        uword body = &msg_buffer + 70
                         
                         session.send_string("Subject: ")
                         session.send_string(subject)
@@ -374,7 +374,7 @@ boards {
         ubyte[MSG_RECORD_SIZE] msg_buffer
         
         ; Clear record
-        uword i = 0
+        ubyte i = 0
         while i < MSG_RECORD_SIZE {
             msg_buffer[i] = 0
             i++
@@ -425,18 +425,17 @@ boards {
         }
         
         ; Set message ID
-        @(&msg_buffer[0] + 130) = lsb(msg_id)
-        @(&msg_buffer[0] + 131) = msb(msg_id)
+        @(&msg_buffer + 130) = lsb(msg_id)
+        @(&msg_buffer + 131) = msb(msg_id)
         
         ; Set reply to ID
-        @(&msg_buffer[0] + 132) = lsb(reply_to_id)
-        @(&msg_buffer[0] + 133) = msb(reply_to_id)
+        @(&msg_buffer + 132) = lsb(reply_to_id)
+        @(&msg_buffer + 133) = msb(reply_to_id)
         
-        ; Set flags (active)
-        msg_buffer[134] = $01
+        ; Message ID is at offset 126-127, no room for flags in 128-byte record
         
         ; Write record
-        if write_message(record_num, &msg_buffer[0]) {
+        if write_message(record_num, &msg_buffer) {
             session.send_line("Message posted successfully!")
             return true
         }
@@ -467,7 +466,7 @@ boards {
                     continue
                 }
                 
-                ubyte choice = @input
+                ubyte choice = @(input)
                 if choice >= $30 and choice <= $39 {
                     choice = choice - $30
                 } else {
@@ -519,7 +518,7 @@ boards {
                     continue
                 }
                 
-                ubyte choice = @input
+                ubyte choice = @(input)
                 if choice >= $30 and choice <= $39 {
                     choice = choice - $30
                 } else {
@@ -561,11 +560,11 @@ boards {
                         uword reply_id = conv.str2uword(reply_id_input)
                         session.send_string("Subject: ")
                         if session.read_line() {
-                            uword subject = session.get_input_line()
+                            uword subject2 = session.get_input_line()
                             session.send_string("Message: ")
                             if session.read_line() {
-                                uword body = session.get_input_line()
-                                post_message(board_name, subject, body, reply_id)
+                                uword body2 = session.get_input_line()
+                                post_message(board_name, subject2, body2, reply_id)
                             }
                         }
                     }

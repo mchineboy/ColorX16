@@ -1,6 +1,6 @@
 %import textio
 %import diskio
-%import cbm
+%import syslib
 %import strings
 %import conv
 
@@ -12,7 +12,7 @@ userdb {
     const ubyte REL_CHANNEL = 2
     const ubyte REL_DEVICE = 8
     const ubyte REL_SECONDARY = 0
-    const uword REL_FILENAME = "bbsusers"
+    uword REL_FILENAME = "bbsusers"
     
     ; User record structure (fixed length for REL file)
     const ubyte RECORD_SIZE = 64  ; Fixed record size for REL file
@@ -28,7 +28,7 @@ userdb {
     ; Offset 45: Flags (1 byte: bit 0=active, bit 1=verified, etc.)
     ; Offset 46-63: Reserved (18 bytes)
     
-    ubyte @shared db_initialized = false
+    ubyte @shared db_initialized = 0
     uword @shared max_records = 100  ; Maximum number of user records
     
     ; Initialize user database
@@ -82,7 +82,7 @@ userdb {
             txt.nl()
         }
         
-        db_initialized = true
+        db_initialized = 1
         return true
     }
     
@@ -233,7 +233,7 @@ userdb {
         ubyte i = 0
         
         while i < max_records {
-            if read_record(i, &record_buffer[0]) {
+            if read_record(i, &record_buffer) {
                 ; Check if record is active (first byte != 0)
                 if record_buffer[0] != 0 {
                     ; Compare username
@@ -270,7 +270,7 @@ userdb {
         ubyte i = 0
         
         while i < max_records {
-            if read_record(i, &record_buffer[0]) {
+            if read_record(i, &record_buffer) {
                 ; Check if record is empty (first byte == 0)
                 if record_buffer[0] == 0 {
                     return i
@@ -317,10 +317,10 @@ userdb {
         }
         
         ; Generate salt (simple random - in production use better RNG)
-        i = 0
-        while i < SALT_SIZE {
-            record_buffer[USERNAME_MAX + i] = (i * 17 + username_len) as ubyte  ; Simple pseudo-random
-            i++
+        ubyte i2 = 0
+        while i2 < SALT_SIZE {
+            record_buffer[USERNAME_MAX + i2] = (i2 * 17 + username_len) as ubyte  ; Simple pseudo-random
+            i2++
         }
         
         ; Hash password
@@ -333,7 +333,7 @@ userdb {
         record_buffer[USERNAME_MAX + SALT_SIZE + PASSWORD_HASH_SIZE + 1] = $03  ; Active + Verified
         
         ; Write record
-        return write_record(record_num, &record_buffer[0])
+        return write_record(record_num, &record_buffer)
     }
     
     ; Verify user password
@@ -345,7 +345,7 @@ userdb {
         
         ; Read record
         ubyte[RECORD_SIZE] record_buffer
-        if not read_record(record_num, &record_buffer[0]) {
+        if not read_record(record_num, &record_buffer) {
             return false
         }
         
@@ -356,15 +356,15 @@ userdb {
         
         ; Hash provided password with stored salt
         ubyte[PASSWORD_HASH_SIZE] computed_hash
-        hash_password(password, &record_buffer[USERNAME_MAX], &computed_hash[0])
+        hash_password(password, &record_buffer[USERNAME_MAX], &computed_hash)
         
         ; Compare hashes
-        uword i = 0
-        while i < PASSWORD_HASH_SIZE {
-            if computed_hash[i] != record_buffer[USERNAME_MAX + SALT_SIZE + i] {
+        ubyte i3 = 0
+        while i3 < PASSWORD_HASH_SIZE {
+            if computed_hash[i3] != record_buffer[USERNAME_MAX + SALT_SIZE + i3] {
                 return false
             }
-            i++
+            i3++
         }
         
         return true
@@ -378,7 +378,7 @@ userdb {
         }
         
         ubyte[RECORD_SIZE] record_buffer
-        if not read_record(record_num, &record_buffer[0]) {
+        if not read_record(record_num, &record_buffer) {
             return 0
         }
         

@@ -12,14 +12,14 @@
 
 files {
 
-    ubyte @shared files_initialized = false
+    ubyte @shared files_initialized = 0
     ubyte @shared file_drive = 8
     uword @shared file_area = "files"  ; Default file area directory
     
     ; Initialize file system
     sub init() {
         diskio.drivenumber = file_drive
-        files_initialized = true
+        files_initialized = 1
     }
     
     ; List files in a directory/area
@@ -102,14 +102,14 @@ files {
         bool error = false
         
         while true {
-            uword bytes_read = diskio.f_read(&buffer[0], 256)
+            uword bytes_read = diskio.f_read(&buffer, 256)
             
             if bytes_read == 0 {
                 break  ; EOF
             }
             
             ; Send chunk to user
-            uword i = 0
+            ubyte i = 0
             while i < bytes_read {
                 if not com.write_char(buffer[i]) {
                     error = true
@@ -188,7 +188,7 @@ files {
                 
                 if ch == 0 {
                     ; No data or error
-                    wait(1)
+                    sys.wait(1)
                     continue
                 }
                 
@@ -205,7 +205,7 @@ files {
                 
                 ; Write buffer when full
                 if buffer_pos >= 256 {
-                    if not diskio.f_write(&buffer[0], 256) {
+                    if not diskio.f_write(&buffer, 256) {
                         receiving = false
                         break
                     }
@@ -227,7 +227,7 @@ files {
         
         ; Write remaining buffer
         if buffer_pos > 0 and not cancelled {
-            diskio.f_write(&buffer[0], buffer_pos)
+            diskio.f_write(&buffer, buffer_pos)
         }
         
         diskio.f_close_w()
@@ -311,10 +311,10 @@ files {
                     } else {
                         session.send_string("Enter filename: ")
                         if session.read_line() {
-                            uword filename = session.get_input_line()
-                            if strings.length(filename) > 0 {
+                            uword filename2 = session.get_input_line()
+                            if strings.length(filename2) > 0 {
                                 uword max_size = 65535  ; 64KB max
-                                upload_file(filename, max_size)
+                                upload_file(filename2, max_size)
                             }
                         }
                     }
