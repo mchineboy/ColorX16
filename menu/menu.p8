@@ -6,6 +6,7 @@
 %import conv
 %import boards/boards
 %import messaging/messaging
+%import files/files
 
 ; Main menu and navigation system for BBS
 ; Provides menu-driven interface for accessing BBS features
@@ -106,15 +107,9 @@ menu {
         messaging.show_menu()
     }
     
-    ; Show file areas menu (placeholder)
+    ; Show file areas menu
     sub show_files_menu() {
-        session.send_line("")
-        session.send_line("=== File Areas ===")
-        session.send_line("")
-        session.send_line("File areas are not yet implemented.")
-        session.send_line("")
-        session.send_string("Press Enter to continue...")
-        session.read_line()
+        files.show_menu()
     }
     
     ; Show games menu (placeholder)

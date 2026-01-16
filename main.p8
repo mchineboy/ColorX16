@@ -7,6 +7,7 @@
 %import login/login
 %import boards/boards
 %import messaging/messaging
+%import files/files
 
 main {
     sub start() {
