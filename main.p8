@@ -1,13 +1,13 @@
 %zeropage kernalsafe
 %import textio
-%import config/config
-%import setup/setup
-%import com/com
-%import session/session
-%import login/login
-%import boards/boards
-%import messaging/messaging
-%import files/files
+%import config
+%import setup
+%import com
+%import session
+%import login
+%import boards
+%import messaging
+%import files
 
 main {
     sub start() {
