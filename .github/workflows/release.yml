@@ -23,7 +23,42 @@ jobs:
         run: |
           # Update this version when a new prog8 release is available
           PROG8_VERSION="12.0.1"
-          curl -L -o prog8c-all.jar "https://github.com/irmen/prog8/releases/download/v${PROG8_VERSION}/prog8c-all.jar"
+          
+          # Use GitHub API to find the actual asset name
+          echo "Fetching release information for v${PROG8_VERSION}..."
+          RELEASE_INFO=$(curl -s "https://api.github.com/repos/irmen/prog8/releases/tags/v${PROG8_VERSION}")
+          
+          if [ -z "$RELEASE_INFO" ] || echo "$RELEASE_INFO" | grep -q '"message": "Not Found"'; then
+            echo "Release v${PROG8_VERSION} not found. Checking latest release..."
+            RELEASE_INFO=$(curl -s "https://api.github.com/repos/irmen/prog8/releases/latest")
+            ACTUAL_VERSION=$(echo "$RELEASE_INFO" | grep '"tag_name"' | cut -d'"' -f4 | sed 's/v//')
+            echo "Latest release is v${ACTUAL_VERSION}"
+            PROG8_VERSION="$ACTUAL_VERSION"
+            RELEASE_INFO=$(curl -s "https://api.github.com/repos/irmen/prog8/releases/tags/v${PROG8_VERSION}")
+          fi
+          
+          # Extract JAR asset URL (look for .jar files)
+          JAR_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.jar[^"]*"' | head -1 | cut -d'"' -f4)
+          
+          if [ -z "$JAR_URL" ]; then
+            echo "No JAR file found in release assets. Available assets:"
+            echo "$RELEASE_INFO" | grep '"browser_download_url"'
+            echo "Error: Could not find JAR file in release v${PROG8_VERSION}"
+            exit 1
+          fi
+          
+          echo "Downloading JAR from: $JAR_URL"
+          curl -L -f -o prog8c-all.jar "$JAR_URL"
+          
+          if [ ! -f prog8c-all.jar ] || [ ! -s prog8c-all.jar ]; then
+            echo "Error: Download failed or file is empty"
+            exit 1
+          fi
+          
+          # Verify it's a valid JAR file
+          file prog8c-all.jar
+          ls -lh prog8c-all.jar
+          
           echo "PROG8_JAR=$(pwd)/prog8c-all.jar" >> $GITHUB_ENV
 
       - name: Install 64tass

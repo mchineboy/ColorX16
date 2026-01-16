@@ -4,6 +4,7 @@
 %import strings
 %import login/login
 %import conv
+%import menu/menu
 
 ; Session management module for BBS
 ; Handles user sessions, terminal interactions, and basic event loop
@@ -208,64 +209,11 @@ session {
         send_line("!")
         send_line("")
         
-        ; Main interaction loop
-        while is_active() {
-            ; Send prompt
-            send_string("> ")
-            
-            ; Read user input
-            if read_line() {
-                uword input = get_input_line()
-                
-                ; Handle empty input
-                if strings.length(input) == 0 {
-                    continue
-                }
-                
-                ; Basic command handling (will be expanded later)
-                ; Convert input to lowercase for comparison (simple approach)
-                uword cmd = input
-                if cmd == "quit" or cmd == "exit" or cmd == "bye" {
-                    send_line("Goodbye!")
-                    login.logout()
-                    break
-                }
-                else if cmd == "help" {
-                    send_line("Available commands:")
-                    send_line("  help   - Show this help")
-                    send_line("  quit   - Disconnect")
-                    send_line("  info   - Show BBS information")
-                    send_line("  whoami - Show current user info")
-                }
-                else if cmd == "info" {
-                    uword bbs_name = config.getdirective("bbsname")
-                    if len(bbs_name) == 0 {
-                        bbs_name = "ColorX128 BBS"
-                    }
-                    send_line("BBS Name: ")
-                    send_string(bbs_name)
-                    send_line("")
-                    send_line("Status: Online")
-                }
-                else if cmd == "whoami" {
-                    uword username = login.get_username()
-                    ubyte level = login.get_user_level()
-                    send_string("Username: ")
-                    send_string(username)
-                    send_line("")
-                    send_string("User Level: ")
-                    uword level_str = conv.str_ub(level)
-                    send_string(level_str)
-                    send_line("")
-                }
-                else {
-                    send_line("Unknown command. Type 'help' for available commands.")
-                }
-            } else {
-                ; Read failed - likely disconnect
-                break
-            }
-        }
+        ; Show BBS info
+        menu.show_info()
+        
+        ; Run main menu system
+        menu.run()
         
         ; Session ended
         send_line("")

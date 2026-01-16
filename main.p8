@@ -5,6 +5,7 @@
 %include com/com
 %include session/session
 %include login/login
+%include boards/boards
 
 main {
     sub start() {
@@ -61,6 +62,9 @@ main {
         
         ; Initialize login system
         login.init()
+        
+        ; Initialize message boards
+        boards.init()
         
         ; Main BBS event loop
         txt.print("BBS is now online and waiting for connections.")
